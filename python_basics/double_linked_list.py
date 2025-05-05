@@ -1,13 +1,13 @@
 # Тесты в конце
 
-from typing import Optional, Any
+from typing import Any
 
 
 class Node:
     def __init__(self, value):
         self.value: Any = value
-        self.prev_v: Optional[Node, None] = None
-        self.next_v: Optional[Node, None] = None
+        self.prev_v: Node | None = None
+        self.next_v: Node | None = None
 
     def __str__(self):
         return str(self.value)
@@ -27,7 +27,9 @@ class DoubleLinkedList:
         find(value): Searches value, returns index.
     """
     def __init__(self, *args):
-        self.start: Optional[Node, None] = None
+        self.start: Node | None = None
+        self.tail: Node | None = None
+        self._length = 0
 
         if args:
             for arg in args:
@@ -38,14 +40,16 @@ class DoubleLinkedList:
 
         if not self.start:
             self.start = new_node
+            self.tail = new_node
 
         else:
-            curr_node: Node = self.start
-            while curr_node.next_v:
-                curr_node = curr_node.next_v
+            curr_node: Node = self.tail
 
             curr_node.next_v = new_node
             new_node.prev_v = curr_node
+
+        self._length += 1
+        self.tail = new_node
 
     def prepend(self, value):
         new_node = Node(value)
@@ -58,14 +62,17 @@ class DoubleLinkedList:
             new_node.next_v = self.start
             self.start = new_node
 
+        self._length += 1
+
     def insert(self, value, index):
         new_node = Node(value)
 
         if index == 0:
-            new_node.next_v = self.start
-            if self.start:
-                self.start.prev_v = new_node
-            self.start = new_node
+            self.prepend(value)
+            return
+
+        if index == self._length:
+            self.append(value)
             return
 
         else:
@@ -87,6 +94,7 @@ class DoubleLinkedList:
                 curr_node.next_v.prev_v = new_node
 
             curr_node.next_v = new_node
+            self._length += 1
 
     def delete(self, value):
 
@@ -95,7 +103,7 @@ class DoubleLinkedList:
 
         else:
             curr_node: Node = self.start
-            while curr_node.next_v:
+            while curr_node:
 
                 if curr_node.value == value:
                     if curr_node.prev_v:
@@ -107,6 +115,7 @@ class DoubleLinkedList:
                         curr_node.next_v.prev_v = curr_node.prev_v
 
                     del curr_node
+                    self._length -= 1
                     return
 
                 curr_node = curr_node.next_v
@@ -137,16 +146,10 @@ class DoubleLinkedList:
         return result_str
 
     def __repr__(self):
-        return "DoubleLinkedList(*args)"
+        return f"DoubleLinkedList({', '.join(str(x) for x in self)})"
 
     def __len__(self):
-        curr_node: Node = self.start
-        result_str = ""
-        while curr_node:
-            result_str += f"{str(curr_node)}"
-            curr_node = curr_node.next_v
-
-        return len(result_str)
+        return self._length
 
     def __iter__(self):
         self.curr_node = self.start
@@ -196,7 +199,9 @@ class TestDoubleLinkedList(unittest.TestCase):
         self.dll.append(3)
 
         self.dll.delete(2)
-        self.assertEqual(str(self.dll), "1, 3, ")
+        self.dll.delete(3)
+        self.assertEqual(str(self.dll), "1, ")
+        self.assertEqual(len(self.dll), 1)
 
     def test_find(self):
         self.dll.append(1)
@@ -211,12 +216,21 @@ class TestDoubleLinkedList(unittest.TestCase):
         with self.assertRaises(IndexError):
             empty_list.find(1)
 
-    def test_len(self):
+    def test_len_append(self):
         self.dll.append(1)
         self.dll.append(2)
         self.dll.append(3)
 
         self.assertEqual(len(self.dll), 3)
+
+    def test_len_insert(self):
+        self.dll.append(1)
+
+        self.assertEqual(len(self.dll), 1)
+
+        self.dll.insert(2, 0)
+
+        self.assertEqual(len(self.dll), 2)
 
     def test_iter(self):
         self.dll.append(1)
@@ -233,3 +247,4 @@ class TestDoubleLinkedList(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
