@@ -1,42 +1,66 @@
+# Отдельный класс итератор
+
+# class MyIterator:
+#     def __init__(self, data):
+#         self._data = data
+#         self._bucket_index = 0
+#         self._inner_index = 0
+#
+#     def __iter__(self):
+#         return self
+#
+#     def __next__(self):
+#         while self._bucket_index < len(self._data):
+#             bucket = self._data[self._bucket_index]
+#             if self._inner_index < len(bucket):
+#                 key = bucket[self._inner_index][0]
+#                 self._inner_index += 1
+#                 return key
+#             else:
+#                 self._bucket_index += 1
+#                 self._inner_index = 0
+#         raise StopIteration
+
+
 class MyDict:
-    def __init__(self):
-        self.size = 4
-        self.data = [[] for _ in range(self.size)]
-        self.count = 0
+    def __init__(self, size=4):
+        self._size = size
+        self._data = [[] for _ in range(self._size)]
+        self._count = 0
 
     def create_hash(self, key):
-        return hash(key) % self.size
+        return hash(key) % self._size
 
-    def resize_data(self):
-        self.size *= 2
-        new_data = [[] for _ in range(self.size)]
+    def re_size_data(self):
+        self._size *= 2
+        new_data = [[] for _ in range(self._size)]
 
-        for bucket in self.data:
+        for bucket in self._data:
             for k, v in bucket:
                 index = self.create_hash(k)
                 new_data[index].append((k, v))
 
-        self.data = new_data
+        self._data = new_data
 
     def __setitem__(self, key, value):
         index = self.create_hash(key)
 
-        bucket = self.data[index]
+        bucket = self._data[index]
         for i, (k, v) in enumerate(bucket):
             if k == key:
                 bucket[i] = (key, value)
                 return
 
         bucket.append((key, value))
-        self.count += 1
+        self._count += 1
 
-        if self.count > self.size // 2:
-            self.resize_data()
+        if self._count > self._size // 2:
+            self.re_size_data()
 
     def __getitem__(self, item):
         index = self.create_hash(item)
 
-        bucket = self.data[index]
+        bucket = self._data[index]
 
         if len(bucket) == 1:
             return bucket[0][1]
@@ -47,7 +71,7 @@ class MyDict:
 
     def __contains__(self, key):
         index = self.create_hash(key)
-        bucket = self.data[index]
+        bucket = self._data[index]
 
         for k, _ in bucket:
             if k == key:
@@ -56,39 +80,29 @@ class MyDict:
 
     def __delitem__(self, key):
         index = self.create_hash(key)
-        bucket = self.data[index]
+        bucket = self._data[index]
 
         for i, (k, v) in enumerate(bucket):
             if k == key:
                 del bucket[i]
-                self.count -= 1
+                self._count -= 1
                 return
         raise KeyError(f'Key {key} not found')
 
     def __len__(self):
-        return self.count
+        return self._count
+
+    # def __iter__(self):
+    #     """ Для варианте где итератор это отдельный класс """
+    #     return MyIterator(self._data)
 
     def __iter__(self):
-        self._bucket_index = 0
-        self._inner_index = 0
-        return self
-
-    def __next__(self):
-        while self._bucket_index < len(self.data):
-            bucket = self.data[self._bucket_index]
-            if self._inner_index < len(bucket):
-                key = bucket[self._inner_index][0]
-                self._inner_index += 1
-                return key
-            else:
-                self._bucket_index += 1
-                self._inner_index = 0
-        raise StopIteration
+        return self.keys()
 
     def get(self, key, default=None):
         index = self.create_hash(key)
 
-        bucket = self.data[index]
+        bucket = self._data[index]
 
         if len(bucket) == 1:
             return bucket[0][1]
@@ -100,17 +114,17 @@ class MyDict:
         return default
 
     def keys(self):
-        for bucket in self.data:
+        for bucket in self._data:
             for key, _ in bucket:
                 yield key
 
     def values(self):
-        for bucket in self.data:
+        for bucket in self._data:
             for _, values in bucket:
                 yield values
 
     def items(self):
-        for bucket in self.data:
+        for bucket in self._data:
             for pair in bucket:
                 yield pair
 
@@ -168,4 +182,5 @@ class TestDoubleLinkedList(unittest.TestCase):
 
         dd = [k for k in self.d.items()]
         self.assertEqual(set(dd), {(1, "one"), ("1", "string one")})
+
 
