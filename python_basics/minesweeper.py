@@ -2,7 +2,7 @@ import random
 
 
 class Field:
-    def __init__(self, x: int, y: int, bomb_number: int, first_to_open: tuple[int, int] | tuple):
+    def __init__(self, x: int, y: int, bomb_number: int, first_to_open: tuple[int, int] | tuple) -> None:
         if x < 5 or y < 5:  # устанавливаем минимальный размер поля
             raise ValueError("x, y must be >= 5")
         if bomb_number < 3:  # устанавливаем минимальное количество бомб
@@ -13,11 +13,11 @@ class Field:
         self.width = x
         self.height = y
         self.field = [[Cell(empty=True, open=False) for _ in range(x)] for _ in range(y)]  # empty, closed at this moment
-        self.bomb_number: int = bomb_number
+        self.bomb_number = bomb_number
         self.first_to_open = first_to_open
         self.closed_cells_countdown = (self.width * self.height) - self.bomb_number
 
-    def generate_field(self):
+    def generate_field(self) -> None:
         all_cells = [(i, j) for i in range(self.height) for j in range(self.width)]
         all_cells.remove(self.first_to_open)
 
@@ -43,24 +43,24 @@ class Cell:
     __CLOSED_CELL = "*"
     __BOMB = "!"
 
-    def __init__(self, empty: bool, open: bool):
+    def __init__(self, empty: bool, open: bool) -> None:
         self.empty = empty
         self.open = open
         self.empty_cell_content = ''
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.open:
             return self.empty_cell_content if self.empty else self.__BOMB
         else:
             return self.__CLOSED_CELL
 
-    def set_bomb(self):
+    def set_bomb(self) -> None:
         self.empty = False
 
 
 class ConsoleOutput:
     @staticmethod
-    def print_field(field: Field):
+    def print_field(field: Field) -> None:
         print("  ", end="")
         for col in range(field.width):
             print(f"{col:2}", end="")
@@ -71,7 +71,7 @@ class ConsoleOutput:
             print(" ".join(str(cell) for cell in row))
 
     @staticmethod
-    def print_rules():
+    def print_rules() -> None:
         rules = ("      * * * * * * *\n"
                  "        COMMANDS\n"
                  "start - to start the game.\n"
@@ -85,14 +85,14 @@ class ConsoleOutput:
 
 
 class GameLogic:
-    def __init__(self, field: Field):
+    def __init__(self, field: Field) -> None:
         self.bomb_flag = False  # indicates if a bomb was found
         self.open_cells_flag = False  # indicates if all sells were opened
         self.field: Field = field
         self.field.generate_field()
         self.closed_cells_countdown = self.field.closed_cells_countdown
 
-    def open_cell(self, x: int, y: int):
+    def open_cell(self, x: int, y: int) -> None:
         cur_cell = self.field.field[x][y]
         if cur_cell.open:
             return
@@ -106,7 +106,7 @@ class GameLogic:
         if cur_cell.empty_cell_content == ' ':
             self.open_neighbors(x, y)
 
-    def open_neighbors(self, x, y):
+    def open_neighbors(self, x: int, y: int) -> None:
         for dx in [-1, 0, 1]:
             for dy in [-1, 0, 1]:
                 nx, ny = x + dx, y + dy
@@ -114,16 +114,15 @@ class GameLogic:
                     if not self.field.field[nx][ny].open:
                         self.open_cell(nx, ny)
 
-    def open_all_cells(self):
+    def open_all_cells(self) -> None:
         for _x in range(self.field.width):
             for _y in range(self.field.height):
                 self.open_cell(_x, _y)
 
 
-
 class GameController:
     @staticmethod
-    def run():
+    def run() -> None:
         try:
             x_ = int(input("The width of the field: "))
             y_ = int(input("The height of the field: "))
