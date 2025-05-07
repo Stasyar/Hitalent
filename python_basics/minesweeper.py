@@ -1,4 +1,5 @@
 import random
+from enum import Enum
 
 
 class Field:
@@ -17,9 +18,22 @@ class Field:
         self.first_to_open = first_to_open
         self.closed_cells_countdown = (self.width * self.height) - self.bomb_number
 
+    def _neighbour_cell(self, nx, ny):
+        """ Checks if cell is within field boarders and contains a bomb"""
+        x_boarder = 0 <= nx < self.height
+        y_boarder = 0 <= ny < self.width
+
+        if x_boarder and y_boarder and not self.field[nx][ny].empty:
+            return True
+
+        return False
+
     def generate_field(self) -> None:
         all_cells = [(i, j) for i in range(self.height) for j in range(self.width)]
-        all_cells.remove(self.first_to_open)
+        try:
+            all_cells.remove(self.first_to_open)
+        except Exception as e:
+            raise ValueError("Invalid first cell coords") from e
 
         bomb_positions = random.sample(all_cells, self.bomb_number)
 
@@ -34,7 +48,7 @@ class Field:
                     for dx in [-1, 0, 1]:  # displacement
                         for dy in [-1, 0, 1]:
                             nx, ny = i + dx, j + dy  # next
-                            if 0 <= nx < self.height and 0 <= ny < self.width and not self.field[nx][ny].empty:  # boarders
+                            if self._neighbour_cell(nx, ny):  # boarders
                                 bomb_count += 1
                     self.field[i][j].empty_cell_content = str(bomb_count) if bomb_count > 0 else ' '
 
@@ -59,6 +73,16 @@ class Cell:
 
 
 class ConsoleOutput:
+    RULES = ("      * * * * * * *\n"
+             "        COMMANDS\n"
+             "start - to start the game.\n"
+             "quit - to stop the game.\n"
+             ""
+             "     IN GAME COMMANDS\n"
+             "show - to show the field.\n"
+             "open X V - to open a cell.\n"
+             "      * * * * * * *")
+
     @staticmethod
     def print_field(field: Field) -> None:
         print("  ", end="")
@@ -72,16 +96,7 @@ class ConsoleOutput:
 
     @staticmethod
     def print_rules() -> None:
-        rules = ("      * * * * * * *\n"
-                 "        COMMANDS\n"
-                 "start - to start the game.\n"
-                 "quit - to stop the game.\n"
-                 ""
-                 "     IN GAME COMMANDS\n"
-                 "show - to show the field.\n"
-                 "open X V - to open a cell.\n"
-                 "      * * * * * * *")
-        print(rules)
+        print(ConsoleOutput.RULES)
 
 
 class GameLogic:
@@ -115,12 +130,57 @@ class GameLogic:
                         self.open_cell(nx, ny)
 
     def open_all_cells(self) -> None:
-        for _x in range(self.field.width):
-            for _y in range(self.field.height):
+        for _x in range(self.field.height):
+            for _y in range(self.field.width):
                 self.open_cell(_x, _y)
 
 
+class CMD(Enum):
+    QUIT = "quit"
+    Q = "q"
+    OPEN = "open"
+    SHOW = "show"
+
+
 class GameController:
+    @staticmethod
+    def run_game(game, field):
+        """ The main cycle of the game"""
+        while True:
+            if game.bomb_flag:
+                print("You lost!")
+                game.open_all_cells()
+                ConsoleOutput.print_field(field=field)
+                break
+
+            if game.closed_cells_countdown == 0:
+                print("You won!")
+                game.open_all_cells()
+                ConsoleOutput.print_field(field=field)
+                break
+
+            command = input()
+
+            if command.lower() in {CMD.QUIT.value, CMD.Q.value}:
+                print("END")
+                break
+
+            elif command.startswith(CMD.OPEN.value):
+                try:
+                    coords = command.split()[1:]
+                    x, y = map(int, coords)
+                    game.open_cell(x, y)
+                    ConsoleOutput.print_field(field=field)
+                except (ValueError, IndexError):
+                    print("Invalid coordinates format")
+
+            elif command == CMD.SHOW.value:
+                ConsoleOutput.print_field(field=field)
+
+            else:
+                print("Unknown command")
+                ConsoleOutput.print_rules()
+
     @staticmethod
     def run() -> None:
         try:
@@ -131,46 +191,15 @@ class GameController:
             field = Field(x=x_, y=y_, bomb_number=bomb_number_, first_to_open=first)
             game = GameLogic(field)
             ConsoleOutput.print_rules()
-            start_input = input("Enter 'start' to start the game: ")
+            start_command = input("Enter 'start' to start the game: ")
 
-            if start_input == "start":
+            if start_command == "start":
                 ConsoleOutput.print_field(field=field)
 
-                while True:
-                    if game.bomb_flag:
-                        print("You lost!")
-                        game.open_all_cells()
-                        ConsoleOutput.print_field(field=field)
-                        break
+                # while cycle for the main game
+                GameController.run_game(game=game, field=field)
 
-                    if game.closed_cells_countdown == 0:
-                        print("You won!")
-                        game.open_all_cells()
-                        ConsoleOutput.print_field(field=field)
-                        break
-
-                    inp = input()
-
-                    if inp.lower() in ["quit", "q"]:
-                        print("END")
-                        break
-
-                    elif inp.startswith("open"):
-                        try:
-                            coords = inp.split()[1:]
-                            x, y = map(int, coords)
-                            game.open_cell(x, y)
-                            ConsoleOutput.print_field(field=field)
-                        except (ValueError, IndexError):
-                            print("Invalid coordinates format")
-
-                    elif inp == "show":
-                        ConsoleOutput.print_field(field=field)
-
-                    else:
-                        print("Unknown command")
-                        ConsoleOutput.print_rules()
-            elif start_input.lower() in ["quit", "q"]:
+            elif start_command.lower() in {CMD.QUIT.value, CMD.Q.value}:
                 print("END")
             else:
                 print("Unknown command")
