@@ -140,6 +140,7 @@ class CMD(Enum):
     Q = "q"
     OPEN = "open"
     SHOW = "show"
+    START = "start"
 
 
 class GameController:
@@ -193,7 +194,7 @@ class GameController:
             ConsoleOutput.print_rules()
             start_command = input("Enter 'start' to start the game: ")
 
-            if start_command == "start":
+            if start_command == CMD.START.value:
                 ConsoleOutput.print_field(field=field)
 
                 # while cycle for the main game
