@@ -1,4 +1,5 @@
 from my_redis import RedisRepository
+from collections import namedtuple
 
 # Для запуска образа: docker run --name redis-server -d -p 6379:6379 redis
 
@@ -6,15 +7,16 @@ my_redis = RedisRepository()
 
 
 def set_users() -> None:
+    User = namedtuple('User', ['id', 'name'])
     users = (
-        (1, "Harry Potter"),
-        (2, "John Doe"),
-        (3, "Peter Parker")
+        User(1, "Harry Potter"),
+        User(2, "John Doe"),
+        User(3, "Peter Parker")
     )
 
     try:
         for us in users:
-            my_redis.set_user(us[0], us[1])
+            my_redis.set_user(us.id, us.name)
 
         print("Users set")
     except Exception as e:
